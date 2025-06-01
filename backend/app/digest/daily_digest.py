@@ -87,6 +87,7 @@ def generate_email_summary_section(emails: List[models.Email], section_title: st
             <p><strong>Summary:</strong> {email.summary or 'No summary available'}</p>
             <p><strong>Category:</strong> {email.category or 'Uncategorized'} | 
             <strong>Priority:</strong> {email.priority or 'Normal'} | 
+            <strong>Importance:</strong> {email.importance or 'Normal'} |   # NEW
             <strong>Sentiment:</strong> {email.sentiment or 'Neutral'}</p>
         </div>
         """

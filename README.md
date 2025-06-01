@@ -75,6 +75,30 @@ All endpoints exactly match Phase 1c specification:
 - **Authentication**: `/auth/*`
 - **Daily Digest**: `/api/digest/daily`
 
+## Project Vision & Goals (Current Phase)
+The current sprint focuses on generating a **daily email digest** (previous 24 h) automatically sent to **tony@ivc-valves.com** and building an internal Retrieval-Augmented-Generation (RAG) system that answers questions from all indexed emails and documents.  
+*A weekly sales digest will follow as a separate milestone after this 7-day sprint.*
+
+## Email Indexing Sequence (Round 1)
+1. storesnproduction@ivc-valves.com  
+2. hr.ivcvalves@gmail.com  
+3. umesh.jadhav@ivc-valves.com  
+4. arpatil@ivc-valves.com  
+5. exports@ivc-valves.com  
+6. sumit.basu@ivc-valves.com  
+7. hr@ivc-valves.com  
+
+Emails are deduplicated with an RFC-822 SHA-256 hash so a single copy is stored even if CC’ed to multiple internal recipients.
+
+## Knowledge-Base Mapping
+• One RAGFlow knowledge base per inbox listed above.  
+• One knowledge base per first-level folder under the Google Drive folder “RAG-IVC Documents”.  
+Search queries are executed across **all** knowledge bases.
+
+## Future Milestones
+• Weekly sales quotation / inquiry digest.  
+• Extended agents (reporting, SAP integration, chatbots, etc.) – outside current sprint scope.
+
 ### Architecture
 
 - **PostgreSQL**: Emails, documents, attachments, processing queue
