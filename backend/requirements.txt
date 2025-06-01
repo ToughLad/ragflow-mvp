@@ -21,3 +21,4 @@ xlrd
 apscheduler
 cryptography
 PyPDF2
+pydantic-settings

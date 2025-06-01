@@ -1,7 +1,8 @@
 from sqlalchemy import Column, String, Text, Boolean, DateTime, Integer, JSON, ForeignKey, ARRAY, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import TIMESTAMPTZ, UUID
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import TIMESTAMP
 import uuid, datetime
 
 Base = declarative_base()
@@ -19,7 +20,7 @@ class Email(Base):
     body = Column(Text)
     sender = Column(String(255))  # email id and/or name
     recipients = Column(ARRAY(String))  # email id and/or name as TEXT[]
-    date = Column(TIMESTAMPTZ)  # TIMESTAMPTZ
+    date = Column(TIMESTAMP(timezone=True))  # TIMESTAMP WITH TIME ZONE
     labels = Column(ARRAY(String(50)))  # inbox/sent/draft etc. as VARCHAR(50)[]
     attachments = Column(JSON)  # e.g., { attachment_id:123, filename: "file.pdf", gdrive_id: "xyz", size:1540}
     summary = Column(Text)
@@ -56,7 +57,7 @@ class Inbox(Base):
     email_address = Column(String(255), unique=True, nullable=False)
     description = Column(Text)
     oauth_token = Column(Text)  # Encrypted OAuth refresh token
-    token_expires_at = Column(TIMESTAMPTZ)  # Token expiration
+    token_expires_at = Column(TIMESTAMP(timezone=True))  # Token expiration
     last_history_id = Column(String(50))  # Gmail history ID for incremental sync
     
     # Relationship to recipients
@@ -80,7 +81,7 @@ class Document(Base):
     source_type = Column(String(50))  # pdf/doc/ocr_pdf/xls/jpg etc.
     extracted_text = Column(Text)
     summary = Column(Text)
-    metadata = Column(JSON)  # filename, author, pages, keywords, size
+    doc_metadata = Column(JSON)  # filename, author, pages, keywords, size
     category = Column(String(50))
     priority = Column(String(50))  # Urgent / Normal / Low Priority (using 'priority' as per updated requirements)
     sentiment = Column(String(50))  # Positive / Neutral / Negative
@@ -95,4 +96,4 @@ class ProcessingQueue(Base):
     item_id = Column(String)  # email/doc ID
     item_type = Column(String(10))  # 'email' or 'doc'
     status = Column(String(15))  # pending/processing/completed
-    created_at = Column(TIMESTAMPTZ, default=datetime.datetime.utcnow)
+    created_at = Column(TIMESTAMP(timezone=True), default=datetime.datetime.utcnow)

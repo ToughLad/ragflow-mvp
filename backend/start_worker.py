@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-# Start RQ worker for background tasks
 echo "Starting RQ worker for email, document, and digest processing..."
 
-python ../start_worker.py
+# Run the worker
+python -m app.queue.tasks
