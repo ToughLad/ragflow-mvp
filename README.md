@@ -7,7 +7,7 @@ End‑to‑end internal Retrieval‑Augmented‑Generation system for IVC email 
 - **Gmail Integration**: Process emails from 7 specific inboxes in sequence
 - **Google Drive Integration**: Index documents with OCR processing
 - **Daily Digest**: Automated email summaries sent to tony@ivc-valves.com
-- **LLM Processing**: Mistral-7B-Instruct-v0.3 for summarization and categorization
+- **LLM Processing**: Mistral-7B-Instruct-v0.3 (configurable via `.env`) with conservative sampling to reduce hallucinations
 - **Background Queue**: Redis-based task processing
 - **RAGFlow Integration**: Vector database with search capabilities
 
@@ -38,6 +38,7 @@ docker compose up -d --build
    - Google OAuth credentials (already set from requirements)
    - Gmail inbox sequence (already configured)
    - Google Drive folder IDs (already set)
+   - LLM settings (model and sampling parameters) using `LLM_MODEL`, `LLM_TEMPERATURE`, `LLM_TOP_K`, and `LLM_TOP_P`
 
 ### Authentication
 
