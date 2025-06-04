@@ -4,10 +4,14 @@ RAGFlow processes Gmail and Google Drive content for the Indian Valve Company.  
 
 ## Quick start
 
+Run the helper script to spin up everything in Docker:
+
 ```bash
-bash setup.sh
-docker compose up -d --build
+./quickstart.sh
 ```
+
+The script requires Docker, Docker Compose, `jq`, `curl` and `nc` to be
+installed on the host system.
 
 ### Services
 
@@ -36,3 +40,6 @@ POST /api/digest/daily       # send the daily digest
 ```
 
 API documentation is at `http://localhost:8000/docs`.
+
+If something doesn't work run `./troubleshoot.sh` to diagnose common issues or
+use `setup.sh` for a step-by-step deployment.
