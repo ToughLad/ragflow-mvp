@@ -41,9 +41,10 @@ docker compose up -d --build
 
 ### Authentication
 
-1. Start Google OAuth flow: `GET /auth/google`
-2. Complete authorization and get callback token
-3. Check authentication status: `GET /auth/status`
+1. Open `/auth/login` in your browser.
+2. Click each inbox to authorize access via Google's consent screen.
+3. After Google redirects back, tokens are stored automatically.
+4. Check authentication status with `GET /auth/status`.
 
 ### Usage
 
