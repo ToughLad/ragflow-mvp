@@ -1,5 +1,5 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Depends, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
 from typing import List, Optional
@@ -13,6 +13,7 @@ from app.db import models, engine, SessionLocal
 from app.db import crud
 from app.llm.summarizer import summarize_email, summarize_document
 from app.scheduler.daily_scheduler import start_scheduler, stop_scheduler, get_scheduler_status
+from app.config import get_settings
 
 logging.basicConfig(level=logging.INFO)
 
@@ -243,23 +244,36 @@ def trigger_daily_digest(bg: BackgroundTasks):
     return {"detail": "Daily digest generation started"}
 
 # OAuth endpoints for Google authentication
+@app.get("/auth/login", summary="Select inbox to authenticate")
+def auth_login():
+    """Simple HTML page to choose which inbox to authorize."""
+    settings = get_settings()
+    inboxes = [e.strip() for e in settings.gmail_inboxes.split(',')]
+    html = "<h1>Authorize Gmail Access</h1><ul>"
+    for inbox in inboxes:
+        html += f'<li><a href="/auth/google?email={inbox}">{inbox}</a></li>'
+    html += "</ul>"
+    return HTMLResponse(content=html)
+
 @app.get("/auth/google", summary="Start Google OAuth flow")
-def start_oauth():
-    """Start Google OAuth flow for Gmail and Drive access."""
+def start_oauth(email: str):
+    """Redirect user to Google's OAuth consent screen."""
     from app.auth.oauth import get_authorization_url
     try:
-        auth_url = get_authorization_url()
-        return {"auth_url": auth_url}
+        auth_url = get_authorization_url(email)
+        return RedirectResponse(url=auth_url)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/auth/callback", summary="Handle OAuth callback")
-def oauth_callback(code: str):
-    """Handle OAuth callback and exchange code for token."""
+def oauth_callback(code: str, state: Optional[str] = None):
+    """Handle OAuth callback and store token."""
     from app.auth.oauth import exchange_code_for_token
     try:
-        token_info = exchange_code_for_token(code)
-        return {"detail": "Authentication successful", "token_info": token_info}
+        email = state if state else ""
+        token_info = exchange_code_for_token(code, email)
+        html = f"<h3>Authentication successful for {email}</h3>"
+        return HTMLResponse(content=html)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

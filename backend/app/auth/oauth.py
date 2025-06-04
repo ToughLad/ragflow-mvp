@@ -156,18 +156,19 @@ def setup_oauth_flow(redirect_uri: str = "http://localhost:8000/auth/callback"):
     
     return flow
 
-def get_authorization_url() -> str:
-    """Get the authorization URL for OAuth flow."""
+def get_authorization_url(email: str) -> str:
+    """Get the authorization URL for OAuth flow for a specific inbox."""
     flow = setup_oauth_flow()
     auth_url, _ = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true',
-        prompt='consent'
+        prompt='consent',
+        state=email
     )
     return auth_url
 
-def exchange_code_for_token(code: str, token_path: str = "token.json") -> dict:
-    """Exchange authorization code for access token."""
+def exchange_code_for_token(code: str, email: str, token_path: str = "token.json") -> dict:
+    """Exchange authorization code for access token and store it."""
     flow = setup_oauth_flow()
     flow.fetch_token(code=code)
     
@@ -176,6 +177,8 @@ def exchange_code_for_token(code: str, token_path: str = "token.json") -> dict:
     with open(token_path, 'w') as token_file:
         token_file.write(creds.to_json())
     
+    store_oauth_token(email, creds)
+
     return {
         "access_token": creds.token,
         "refresh_token": creds.refresh_token,
