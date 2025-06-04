@@ -147,7 +147,8 @@ def process_attachments(service, user_id: str, message_id: str, payload: Dict[st
                     from app.ocr.ocr_cleaner import extract_text_from_pdf_bytes
                     from app.llm.summarizer import clean_ocr_text
                     raw_text = extract_text_from_pdf_bytes(file_data)
-                    content = clean_ocr_text(raw_text)  # LLM cleanup as per requirements
+                    # Clean up OCR output for better summaries
+                    content = clean_ocr_text(raw_text)
                 except Exception as e:
                     log.warning(f"Failed to extract text from PDF {att['filename']}: {e}")
                     content = ""
@@ -165,7 +166,8 @@ def process_attachments(service, user_id: str, message_id: str, payload: Dict[st
                     
                     image = Image.open(BytesIO(file_data))
                     raw_text = pytesseract.image_to_string(image)
-                    content = clean_ocr_text(raw_text)  # LLM cleanup as per requirements
+                    # Clean up OCR output for better summaries
+                    content = clean_ocr_text(raw_text)
                 except Exception as e:
                     log.warning(f"Failed to extract text from image {att['filename']}: {e}")
                     content = ""
@@ -192,10 +194,10 @@ def process_attachments(service, user_id: str, message_id: str, payload: Dict[st
     return processed_attachments
 
 def fetch_and_process():
-    """Fetch emails from all configured inboxes and process them according to requirements."""
+    """Fetch emails from all configured inboxes and process them."""
     settings = get_settings()
     
-    # Email sequence from requirements - add one by one in this order
+    # Inbox sequence is processed in this order
     inbox_sequence = [
         "storesnproduction@ivc-valves.com",  # 60 MB
         "hr.ivcvalves@gmail.com",           # inbox 851, sent 546 - personal Gmail ID for testing
@@ -210,7 +212,7 @@ def fetch_and_process():
     
     try:
         for inbox in inbox_sequence:
-            log.info(f"Processing inbox: {inbox} (sequence order from requirements)")
+            log.info(f"Processing inbox: {inbox}")
             
             try:
                 # Get Gmail service for this specific email (handles domain-wide vs OAuth)
@@ -328,7 +330,7 @@ def fetch_and_process():
                         # Create email recipient record for avoiding duplication
                         crud.create_email_recipient(db, db_email.email_id, db_inbox.inbox_id)
                         
-                        # Summarize email using LLM with the exact prompt from requirements
+                        # Summarize the email using the configured prompt
                         if body.strip():
                             summary_data = summarize_email(
                                 from_email=email_data['sender'],

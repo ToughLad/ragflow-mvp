@@ -145,7 +145,7 @@ def ingest_emails(bg: BackgroundTasks):
 # Document endpoints
 @app.post("/api/documents/upload", summary="Handle multiple files/folders/zips")
 def upload_documents(bg: BackgroundTasks):
-    """Handle document upload from Google Drive folders as specified in requirements."""
+    """Handle document upload from Google Drive folders."""
     def process_documents():
         process_all_documents()
     
@@ -316,7 +316,7 @@ def health_check():
 # Daily digest endpoint
 @app.post("/api/digest/daily", summary="Generate and send daily digest")
 def trigger_daily_digest(bg: BackgroundTasks):
-    """Generate and send daily digest to tony@ivc-valves.com as specified in requirements."""
+    """Generate and send the daily digest email."""
     bg.add_task(send_daily_digest)
     return {"detail": "Daily digest generation started"}
 

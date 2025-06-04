@@ -7,7 +7,7 @@ from app.config import get_settings
 
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
-# Google Drive folder IDs from requirements
+# Google Drive folder IDs used by the application
 ATTACHMENT_FOLDER_ID = "1dEjEogfE3WlHypaY8vuaWiBeZjjuVTGV"  # RAG-Email Attachments
 DOCUMENTS_FOLDER_ID = "1oas1TEtW26ZNvW2jekk6Y8R2Hb85IUmn"   # RAG-IVC Documents
 

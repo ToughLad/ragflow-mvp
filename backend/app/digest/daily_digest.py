@@ -220,5 +220,5 @@ def generate_weekly_sales_digest():
     """Generate weekly digest of sales quotations sent and sales inquiries received.
     This is for future implementation after the 7-day sprint."""
     # This function would implement the weekly sales digest requirement
-    # but is marked for future implementation as per requirements
+    # marked for future implementation
     pass
