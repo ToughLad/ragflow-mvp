@@ -17,7 +17,7 @@ End‑to‑end internal Retrieval‑Augmented‑Generation system for IVC email 
 # Setup environment and pull required models
 bash setup.sh
 
-# Start all services
+# Start all services using the provided compose file
 docker compose up -d --build
 ```
 
