@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     
     # LLM Model specification from requirements
     llm_model: str = Field(default="mistral-7b-instruct-v0.3", env="LLM_MODEL")
+    llm_temperature: float = Field(default=0.2, env="LLM_TEMPERATURE")
+    llm_top_k: int = Field(default=20, env="LLM_TOP_K")
+    llm_top_p: float = Field(default=0.7, env="LLM_TOP_P")
     
     # Daily digest settings from requirements
     digest_recipient: str = Field(default="tony@ivc-valves.com", env="DIGEST_RECIPIENT")
