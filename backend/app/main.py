@@ -45,6 +45,12 @@ def add_email_inbox(email_address: str, description: str = "", db: Session = Dep
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Listing inboxes for UI
+@app.get("/api/inbox/list", summary="List configured inboxes")
+def list_inboxes(db: Session = Depends(get_db)):
+    inboxes = crud.get_all_inboxes(db)
+    return {"inboxes": [i.email_address for i in inboxes]}
+
 @app.post("/api/emails/refresh/{email_id}", summary="Regenerate summary for 1 email")
 def refresh_email(email_id: str, bg: BackgroundTasks, db: Session = Depends(get_db)):
     try:
@@ -54,8 +60,15 @@ def refresh_email(email_id: str, bg: BackgroundTasks, db: Session = Depends(get_
         
         # Add to background task queue for re-processing
         def reprocess_email():
-            email_text = f"Subject: {email.subject}\n\nBody: {email.body}"
-            summary_data = summarize_email(email_text, email.sender)
+            summary_data = summarize_email(
+                from_email=email.sender,
+                to_list=email.to or [],
+                cc_list=email.cc or [],
+                subject=email.subject or "",
+                date_str=email.date.isoformat() if email.date else "",
+                body=email.body or "",
+                email_id=email.sender,
+            )
             
             update_data = {
                 'summary': summary_data.get('summary', ''),
@@ -69,6 +82,39 @@ def refresh_email(email_id: str, bg: BackgroundTasks, db: Session = Depends(get_
         
         bg.add_task(reprocess_email)
         return {"detail": f"Email {email_id} queued for refresh"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# List emails with optional filters
+@app.get("/api/emails", summary="List emails with filters")
+def list_emails(
+    inboxes: Optional[str] = None,
+    category: Optional[str] = None,
+    offset: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    try:
+        query = db.query(models.Email)
+        if inboxes:
+            inbox_list = [i.strip() for i in inboxes.split(',') if i.strip()]
+            if inbox_list:
+                query = query.join(models.EmailRecipient).join(models.Inbox).filter(models.Inbox.email_address.in_(inbox_list))
+        if category:
+            query = query.filter(models.Email.category == category)
+        emails = query.order_by(models.Email.date.desc()).offset(offset).limit(limit).all()
+        return {
+            "emails": [
+                {
+                    "email_id": e.email_id,
+                    "subject": e.subject,
+                    "date": e.date.isoformat() if e.date else None,
+                }
+                for e in emails
+            ],
+            "offset": offset,
+            "limit": limit,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -116,6 +162,37 @@ def delete_document(document_id: str, db: Session = Depends(get_db)):
         db.delete(document)
         db.commit()
         return {"detail": f"Document {document_id} removed from index"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# List documents with optional filters
+@app.get("/api/documents", summary="List documents with filters")
+def list_documents(
+    source_type: Optional[str] = None,
+    category: Optional[str] = None,
+    offset: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    try:
+        query = db.query(models.Document)
+        if source_type:
+            query = query.filter(models.Document.source_type == source_type)
+        if category:
+            query = query.filter(models.Document.category == category)
+        docs = query.order_by(models.Document.id.desc()).offset(offset).limit(limit).all()
+        return {
+            "documents": [
+                {
+                    "id": d.id,
+                    "doc_metadata": d.doc_metadata or {},
+                    "category": d.category,
+                }
+                for d in docs
+            ],
+            "offset": offset,
+            "limit": limit,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
