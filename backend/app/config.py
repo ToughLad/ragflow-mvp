@@ -17,28 +17,28 @@ class Settings(BaseSettings):
     redis_host: str = Field(default="redis", env="REDIS_HOST")
     redis_port: int = Field(default=6379, env="REDIS_PORT")
 
-    # Google OAuth & API settings - Exact from requirements
+    # Google OAuth & API settings
     google_client_id: str = Field(..., env="GOOGLE_CLIENT_ID")
     google_client_secret: str = Field(..., env="GOOGLE_CLIENT_SECRET")
     google_project_id: str = Field(..., env="GOOGLE_PROJECT_ID")
     
-    # Gmail inboxes to index in the specified sequence from requirements
+    # Gmail inboxes to index in this sequence
     gmail_inboxes: str = Field(
         default="storesnproduction@ivc-valves.com,hr.ivcvalves@gmail.com,umesh.jadhav@ivc-valves.com,arpatil@ivc-valves.com,exports@ivc-valves.com,sumit.basu@ivc-valves.com,hr@ivc-valves.com", 
         env="GMAIL_INBOXES"
     )
     
-    # Google Drive folder IDs - Exact from requirements
+    # Google Drive folder IDs used by the application
     attachment_folder_id: str = Field(default="1dEjEogfE3WlHypaY8vuaWiBeZjjuVTGV", env="ATTACHMENT_FOLDER_ID")  # RAG-Email Attachments
     documents_folder_id: str = Field(default="1oas1TEtW26ZNvW2jekk6Y8R2Hb85IUmn", env="DOCUMENTS_FOLDER_ID")  # RAG-IVC Documents
     
-    # LLM Model specification from requirements
+    # LLM model configuration
     llm_model: str = Field(default="mistral-7b-instruct-v0.3", env="LLM_MODEL")
     llm_temperature: float = Field(default=0.2, env="LLM_TEMPERATURE")
     llm_top_k: int = Field(default=20, env="LLM_TOP_K")
     llm_top_p: float = Field(default=0.7, env="LLM_TOP_P")
     
-    # Daily digest settings from requirements
+    # Daily digest settings
     digest_recipient: str = Field(default="tony@ivc-valves.com", env="DIGEST_RECIPIENT")
     digest_time: str = Field(default="08:00", env="DIGEST_TIME")  # Format: HH:MM
     

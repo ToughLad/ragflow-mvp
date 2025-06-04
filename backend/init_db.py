@@ -19,7 +19,7 @@ def init_database():
     # Insert initial inbox data
     db = SessionLocal()
     try:
-        # Create initial inboxes as per requirements
+        # Create initial inboxes
         inbox_sequence = [
             'storesnproduction@ivc-valves.com',
             'hr.ivcvalves@gmail.com', 

@@ -1,6 +1,6 @@
 """
 Document processing module for Google Drive integration.
-Processes documents from the "RAG-IVC Documents" folder according to requirements.
+Processes documents from the "RAG-IVC Documents" folder.
 """
 import logging
 import os
@@ -39,7 +39,8 @@ def extract_text_from_file(file_data: bytes, filename: str, mime_type: str) -> s
             # PDF files - use OCR with Tesseract as specified
             from app.ocr.ocr_cleaner import extract_text_from_pdf_bytes
             raw_text = extract_text_from_pdf_bytes(file_data)
-            content = clean_ocr_text(raw_text)  # LLM cleanup as per requirements
+            # Clean up OCR output for better summaries
+            content = clean_ocr_text(raw_text)
             
         elif mime_type in [
             'application/msword', 
@@ -74,9 +75,10 @@ def extract_text_from_file(file_data: bytes, filename: str, mime_type: str) -> s
                 from PIL import Image
                 from io import BytesIO
                 
-                image = Image.open(BytesIO(file_data))
-                raw_text = pytesseract.image_to_string(image)
-                content = clean_ocr_text(raw_text)  # LLM cleanup as per requirements
+            image = Image.open(BytesIO(file_data))
+            raw_text = pytesseract.image_to_string(image)
+            # Clean up OCR output for better summaries
+            content = clean_ocr_text(raw_text)
             except Exception as e:
                 log.warning(f"Failed to extract text from image {filename}: {e}")
                 
@@ -135,7 +137,7 @@ def process_drive_folder(folder_id: str, folder_name: str = "", token_path: str 
                     # Determine department from folder structure
                     department = get_department_from_path(folder_name)
                     
-                    # Summarize document using LLM with exact prompt from requirements
+                    # Summarize the document using the configured prompt
                     summary_data = summarize_document(extracted_text, department)
                     
                     # Create document record

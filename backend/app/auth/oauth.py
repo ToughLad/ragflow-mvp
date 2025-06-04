@@ -18,7 +18,7 @@ from cryptography.fernet import Fernet
 
 log = logging.getLogger(__name__)
 
-# Scopes required for the application - Exact from requirements
+# Scopes required for the application
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',  # Domain wide access for ivc-valves.com
     'https://www.googleapis.com/auth/drive.file'

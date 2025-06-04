@@ -48,7 +48,7 @@ def summarize_email(
         # Try to parse as JSON first
         data = json.loads(raw)
     except json.JSONDecodeError:
-        # Parse the multiline format specified in requirements
+        # Parse the expected multiline format
         data = parse_multiline_response(raw)
     
     return data
@@ -130,7 +130,7 @@ def clean_ocr_text(ocr_text: str) -> str:
     return resp.json()["response"].strip()
 
 def parse_multiline_response(response: str) -> dict:
-    """Parse the multiline response format specified in requirements."""
+    """Parse the expected multiline response format."""
     lines = response.strip().split('\n')
     data = {
         'summary': '',

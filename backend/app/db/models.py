@@ -26,7 +26,7 @@ class Email(Base):
     attachments = Column(JSON)  # e.g., { attachment_id:123, filename: "file.pdf", gdrive_id: "xyz", size:1540}
     summary = Column(Text)
     category = Column(String(50))
-    priority = Column(String(50))  # Urgent / Normal / Low Priority (using 'priority' as per updated requirements)
+    priority = Column(String(50))  # Urgent / Normal / Low Priority
     sentiment = Column(String(50))  # Positive / Neutral / Negative  
     importance = Column(String(50))  # Very Important / Normal / Low Importance
     keywords = Column(ARRAY(String))  # Array of keywords as TEXT[]
@@ -84,7 +84,7 @@ class Document(Base):
     summary = Column(Text)
     doc_metadata = Column(JSON)  # filename, author, pages, keywords, size
     category = Column(String(50))
-    priority = Column(String(50))  # Urgent / Normal / Low Priority (using 'priority' as per updated requirements)
+    priority = Column(String(50))  # Urgent / Normal / Low Priority
     sentiment = Column(String(50))  # Positive / Neutral / Negative
     importance = Column(String(50))  # Very Important / Normal / Low Importance
     keywords = Column(ARRAY(String))  # Array of keywords as TEXT[]
