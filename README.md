@@ -34,7 +34,7 @@ docker compose up -d --build
 
 ### Configuration
 
-1. Copy `.env.example` to `.env` and configure:
+1. Edit the provided `.env` file if you need to change defaults:
    - Google OAuth credentials (already set from requirements)
    - Gmail inbox sequence (already configured)
    - Google Drive folder IDs (already set)
