@@ -11,11 +11,9 @@ from google.oauth2.credentials import Credentials
 from google.oauth2 import service_account
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
-from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.db import SessionLocal
 from app.db.models import Inbox
-import hashlib
 from cryptography.fernet import Fernet
 
 log = logging.getLogger(__name__)
@@ -49,65 +47,6 @@ def decrypt_token(encrypted_token: str) -> str:
     fernet = Fernet(get_encryption_key())
     return fernet.decrypt(encrypted_token.encode()).decode()
 
-def setup_domain_wide_delegation():
-    """Set up domain-wide delegation for @ivc-valves.com emails."""
-    service_account_file = "/app/config/service_account.json"
-    if not os.path.exists(service_account_file):
-        log.warning("Service account file not found. Domain-wide delegation not available.")
-        return None
-    
-    credentials = service_account.Credentials.from_service_account_file(
-        service_account_file,
-        scopes=SCOPES
-    )
-    return credentials
-
-def get_service_for_email(email_address: str):
-    """Get Gmail service for specific email address using appropriate auth method."""
-    db = SessionLocal()
-    try:
-        inbox = db.query(Inbox).filter(Inbox.email_address == email_address).first()
-        
-        if email_address.endswith('@ivc-valves.com'):
-            # Use domain-wide delegation
-            credentials = setup_domain_wide_delegation()
-            if credentials:
-                delegated_credentials = credentials.with_subject(email_address)
-                return build('gmail', 'v1', credentials=delegated_credentials)
-            else:
-                log.error(f"Domain-wide delegation not configured for {email_address}")
-                return None
-        else:
-            # Use stored OAuth token
-            if inbox and inbox.oauth_token:
-                try:
-                    token_data = json.loads(decrypt_token(inbox.oauth_token))
-                    credentials = Credentials.from_authorized_user_info(token_data, SCOPES)
-                    
-                    # Refresh if needed
-                    if credentials.expired and credentials.refresh_token:
-                        credentials.refresh(Request())
-                        # Update stored token
-                        updated_token = json.dumps({
-                            'token': credentials.token,
-                            'refresh_token': credentials.refresh_token,
-                            'token_uri': credentials.token_uri,
-                            'client_id': credentials.client_id,
-                            'client_secret': credentials.client_secret
-                        })
-                        inbox.oauth_token = encrypt_token(updated_token)
-                        inbox.token_expires_at = datetime.utcnow() + timedelta(seconds=credentials.expiry.timestamp())
-                        db.commit()
-                    
-                    return build('gmail', 'v1', credentials=credentials)
-                except Exception as e:
-                    log.error(f"Failed to load credentials for {email_address}: {e}")
-                    return None
-            else:
-                log.error(f"No OAuth token stored for {email_address}")
-                return None
-    finally:
-        db.close()
 
 def store_oauth_token(email_address: str, credentials: Credentials):
     """Store OAuth token for an email address."""
