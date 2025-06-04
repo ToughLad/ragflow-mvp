@@ -31,6 +31,11 @@ services:
   backend:
     build: ./backend
     env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      RAGFLOW_HOST: http://ragflow:3000
+      OLLAMA_HOST: http://ollama:11434
     depends_on:
       - postgres
       - redis
@@ -41,9 +46,22 @@ services:
     command: ["bash", "scripts/run_server.sh"]
     restart: unless-stopped
 
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   worker:
     build: ./backend
     env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      RAGFLOW_HOST: http://ragflow:3000
+      OLLAMA_HOST: http://ollama:11434
     depends_on:
       - postgres
       - redis

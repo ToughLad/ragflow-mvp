@@ -72,8 +72,9 @@ def generate_email_summary_section(emails: List[models.Email], section_title: st
         
         # Get inbox from recipients (simplified)
         inbox = "Unknown"
-        if email.recipients:
-            for recipient in email.recipients:
+        recipients = (email.to or []) + (email.cc or [])
+        if recipients:
+            for recipient in recipients:
                 if '@ivc-valves.com' in recipient:
                     inbox = recipient
                     break
@@ -108,8 +109,9 @@ def generate_daily_digest_html(emails: List[models.Email]) -> str:
     # Count by inbox
     inbox_counts = {}
     for email in emails:
-        if email.recipients:
-            for recipient in email.recipients:
+        recipients = (email.to or []) + (email.cc or [])
+        if recipients:
+            for recipient in recipients:
                 if '@ivc-valves.com' in recipient or '@gmail.com' in recipient:
                     inbox_counts[recipient] = inbox_counts.get(recipient, 0) + 1
     

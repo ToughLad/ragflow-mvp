@@ -8,7 +8,8 @@ class EmailIn(BaseModel):
     subject: str
     body: str
     sender: str
-    recipients: List[str]
+    to: List[str] = Field(default_factory=list)
+    cc: List[str] = Field(default_factory=list)
     date: datetime.datetime
     labels: List[str]
 

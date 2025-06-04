@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAGFlow MVP</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <button data-tab="search">Search</button>
+    <button data-tab="emails">Emails</button>
+    <button data-tab="documents">Documents</button>
+    <button data-tab="queue">Queue</button>
+  </nav>
+  <div id="content">
+    <section id="search" class="tab active">
+      <h2>Search</h2>
+      <input type="text" id="query" placeholder="Ask a question" />
+      <button id="searchBtn">Search</button>
+      <pre id="searchResult"></pre>
+    </section>
+    <section id="emails" class="tab">
+      <h2>Emails</h2>
+      <div>
+        <label>Inbox:</label>
+        <select id="emailInbox" multiple></select>
+        <label>Category:</label>
+        <input type="text" id="emailCategory" placeholder="Category" />
+        <button id="loadEmails">Load</button>
+      </div>
+      <ul id="emailList"></ul>
+    </section>
+    <section id="documents" class="tab">
+      <h2>Documents</h2>
+      <div>
+        <label>Type:</label>
+        <input type="text" id="docType" placeholder="source type" />
+        <label>Category:</label>
+        <input type="text" id="docCategory" placeholder="category" />
+        <button id="loadDocs">Load</button>
+      </div>
+      <ul id="docList"></ul>
+    </section>
+    <section id="queue" class="tab">
+      <h2>Processing Queue</h2>
+      <div>
+        <button id="prevPage">Prev</button>
+        <button id="nextPage">Next</button>
+      </div>
+      <ul id="queueList"></ul>
+    </section>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
