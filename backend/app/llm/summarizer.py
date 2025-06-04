@@ -8,11 +8,18 @@ def summarize_email(email_text: str, email_id: str = "") -> dict:
     """Summarize email content using the specified prompt template."""
     prompt = EMAIL_PROMPT_TEMPLATE.format(email_text=email_text, email_id=email_id)
     
-    resp = requests.post(f"{settings.ollama_host}/api/generate", json={
-        "model": "mistral",
-        "prompt": prompt,
-        "stream": False
-    }, timeout=120)
+    resp = requests.post(
+        f"{settings.ollama_host}/api/generate",
+        json={
+            "model": settings.llm_model,
+            "prompt": prompt,
+            "temperature": settings.llm_temperature,
+            "top_k": settings.llm_top_k,
+            "top_p": settings.llm_top_p,
+            "stream": False,
+        },
+        timeout=120,
+    )
     resp.raise_for_status()
     
     raw = resp.json()["response"]
@@ -30,11 +37,18 @@ def summarize_attachment(document_text: str, email_id: str = "") -> dict:
     """Summarize email attachment content using the specified prompt template."""
     prompt = ATTACHMENT_PROMPT_TEMPLATE.format(document_text=document_text, email_id=email_id)
     
-    resp = requests.post(f"{settings.ollama_host}/api/generate", json={
-        "model": "mistral",
-        "prompt": prompt,
-        "stream": False
-    }, timeout=120)
+    resp = requests.post(
+        f"{settings.ollama_host}/api/generate",
+        json={
+            "model": settings.llm_model,
+            "prompt": prompt,
+            "temperature": settings.llm_temperature,
+            "top_k": settings.llm_top_k,
+            "top_p": settings.llm_top_p,
+            "stream": False,
+        },
+        timeout=120,
+    )
     resp.raise_for_status()
     
     raw = resp.json()["response"]
@@ -50,11 +64,18 @@ def summarize_document(document_text: str, department_name: str = "") -> dict:
     """Summarize document content using the specified prompt template."""
     prompt = DOCUMENT_PROMPT_TEMPLATE.format(document_text=document_text, department_name=department_name)
     
-    resp = requests.post(f"{settings.ollama_host}/api/generate", json={
-        "model": "mistral",
-        "prompt": prompt,
-        "stream": False
-    }, timeout=120)
+    resp = requests.post(
+        f"{settings.ollama_host}/api/generate",
+        json={
+            "model": settings.llm_model,
+            "prompt": prompt,
+            "temperature": settings.llm_temperature,
+            "top_k": settings.llm_top_k,
+            "top_p": settings.llm_top_p,
+            "stream": False,
+        },
+        timeout=120,
+    )
     resp.raise_for_status()
     
     raw = resp.json()["response"]
@@ -72,11 +93,18 @@ def clean_ocr_text(ocr_text: str) -> str:
     
     prompt = OCR_CLEANING_PROMPT_TEMPLATE.format(ocr_text=ocr_text)
     
-    resp = requests.post(f"{settings.ollama_host}/api/generate", json={
-        "model": "mistral",
-        "prompt": prompt,
-        "stream": False
-    }, timeout=120)
+    resp = requests.post(
+        f"{settings.ollama_host}/api/generate",
+        json={
+            "model": settings.llm_model,
+            "prompt": prompt,
+            "temperature": settings.llm_temperature,
+            "top_k": settings.llm_top_k,
+            "top_p": settings.llm_top_p,
+            "stream": False,
+        },
+        timeout=120,
+    )
     resp.raise_for_status()
     
     return resp.json()["response"].strip()

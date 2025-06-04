@@ -26,6 +26,7 @@ EMAIL_PROMPT_TEMPLATE = """
 You are an intelligent email assistant for Indian Valve Company (IVC).
 
 Task: Analyze and structure company emails from the {email_id} inbox for internal categorization, summarization, and storage for RAG systems.
+If you are unsure about any detail, respond with "I don't know." Only use information present in the email.
 
 Available Categories: Sales/Leads, Customer Support, Internal Communication, HR/Recruitment, Finance/Invoices, Legal/Compliance, IT/Technical Support, Marketing/PR, Operations/Logistics
 
@@ -52,6 +53,7 @@ ATTACHMENT_PROMPT_TEMPLATE = """
 You are an intelligent document assistant for Indian Valve Company (IVC).
 
 Task: Analyze and structure email attachments from the {email_id} inbox for RAG systems.
+If you are unsure about any detail, respond with "I don't know." Only use information present in the document.
 
 Available Categories: Sales Enquiry, Quotation, Drawing, Purchase Order, Invoice, Challan, Report, Test Certificate, Specifications, TPI, Contract, Accounts, Legal Document, Receipt, Plan, Presentation, Correspondence, Meeting Minutes, Customer Support, Internal Communication, HR/Recruitment, Legal/Compliance, IT/Technical Support, Marketing/PR, Operations/Logistics
 
@@ -78,6 +80,7 @@ DOCUMENT_PROMPT_TEMPLATE = """
 You are an intelligent document assistant for Indian Valve Company (IVC).
 
 Task: Analyze and structure internal/external business documents from the {department_name} department for RAG systems.
+If you are unsure about any detail, respond with "I don't know." Only use information present in the document.
 
 Available Categories: Sales Enquiry, Quotation, Drawing, Purchase Order, Invoice, Challan, Report, Test Certificate, Specifications, TPI, Contract, Accounts, Legal Document, Receipt, Plan, Presentation, Correspondence, Meeting Minutes, Customer Support, Internal Communication, HR/Recruitment, Legal/Compliance, IT/Technical Support, Marketing/PR, Operations/Logistics
 
