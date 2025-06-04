@@ -27,6 +27,7 @@ docker compose up -d --build
 |-----------|------|-------------------------------|
 | backend   | 8000 | FastAPI + API endpoints       |
 | worker    | -    | Background task processing    |
+| frontend  | 8080 | Simple search UI              |
 | RAGFlow   | 3000 | Vector DB & search UI         |
 | Ollama    | 11434| Local Mistral 7B LLM          |
 | PostgreSQL| 5432 | Structured data storage       |
@@ -119,6 +120,7 @@ Search queries are executed across **all** knowledge bases.
 ### Access URLs
 
 - API Documentation: http://localhost:8000/docs
+- Frontend UI: http://localhost:8080
 - RAGFlow UI: http://localhost:3000
 - Health Check: http://localhost:8000/health
 

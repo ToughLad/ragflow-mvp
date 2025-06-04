@@ -1,12 +1,32 @@
 import requests, json
 from app.config import get_settings
-from app.llm.summary_prompts import EMAIL_PROMPT_TEMPLATE, ATTACHMENT_PROMPT_TEMPLATE, DOCUMENT_PROMPT_TEMPLATE
+from app.llm.summary_prompts import (
+    EMAIL_PROMPT_TEMPLATE,
+    ATTACHMENT_PROMPT_TEMPLATE,
+    DOCUMENT_PROMPT_TEMPLATE,
+)
 
 settings = get_settings()
 
-def summarize_email(email_text: str, email_id: str = "") -> dict:
+def summarize_email(
+    from_email: str,
+    to_list: list,
+    cc_list: list,
+    subject: str,
+    date_str: str,
+    body: str,
+    email_id: str = "",
+) -> dict:
     """Summarize email content using the specified prompt template."""
-    prompt = EMAIL_PROMPT_TEMPLATE.format(email_text=email_text, email_id=email_id)
+    prompt = EMAIL_PROMPT_TEMPLATE.format(
+        from_email=from_email,
+        to_list=", ".join(to_list) if to_list else "Not specified",
+        cc_list=", ".join(cc_list) if cc_list else "Not specified",
+        subject=subject,
+        email_date=date_str or "Not specified",
+        body=body,
+        email_id=email_id,
+    )
     
     resp = requests.post(
         f"{settings.ollama_host}/api/generate",

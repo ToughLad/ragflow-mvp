@@ -88,6 +88,16 @@ def extract_email_body(payload: Dict[str, Any]) -> str:
     
     return ''
 
+def strip_disclaimer(text: str) -> str:
+    """Remove disclaimer or virus warning sections from email body."""
+    lowered = text.lower()
+    patterns = ["disclaimer:", "warning:"]
+    for p in patterns:
+        idx = lowered.find(p)
+        if idx != -1:
+            return text[:idx].strip()
+    return text.strip()
+
 def process_attachments(service, user_id: str, message_id: str, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Process email attachments, upload to Google Drive and extract text content."""
     attachments = []
@@ -261,14 +271,22 @@ def fetch_and_process():
                                 except:
                                     date = None
                         
-                        # Extract body with improved handling
+                        # Extract body with improved handling and strip disclaimers
                         body = extract_email_body(msg['payload'])
+                        body = strip_disclaimer(body)
                         
-                        # Extract recipients (To, CC, BCC)
+                        # Extract recipients
+                        to_list = []
+                        cc_list = []
                         recipients = []
-                        for field in ['To', 'Cc', 'Bcc']:
-                            if headers.get(field):
-                                recipients.extend([r.strip() for r in headers[field].split(',')])
+                        if headers.get('To'):
+                            to_list = [r.strip() for r in headers['To'].split(',')]
+                            recipients.extend(to_list)
+                        if headers.get('Cc'):
+                            cc_list = [r.strip() for r in headers['Cc'].split(',')]
+                            recipients.extend(cc_list)
+                        if headers.get('Bcc'):
+                            recipients.extend([r.strip() for r in headers['Bcc'].split(',')])
                         
                         # Process attachments first
                         attachments_data = []
@@ -295,7 +313,8 @@ def fetch_and_process():
                             'subject': headers.get('Subject', ''),
                             'body': body,
                             'sender': headers.get('From', ''),
-                            'recipients': recipients,
+                            'to': to_list,
+                            'cc': cc_list,
                             'date': date,
                             'labels': msg.get('labelIds', []),
                             'attachments': attachments_data,
@@ -311,8 +330,15 @@ def fetch_and_process():
                         
                         # Summarize email using LLM with the exact prompt from requirements
                         if body.strip():
-                            email_text = f"Subject: {email_data['subject']}\n\nBody: {body}"
-                            summary_data = summarize_email(email_text, inbox)
+                            summary_data = summarize_email(
+                                from_email=email_data['sender'],
+                                to_list=to_list,
+                                cc_list=cc_list,
+                                subject=email_data['subject'],
+                                date_str=date.isoformat() if date else '',
+                                body=body,
+                                email_id=inbox,
+                            )
                             
                             # Update email with summary data using priority instead of urgency
                             db_email.summary = summary_data.get('summary', '')

@@ -19,7 +19,8 @@ class Email(Base):
     subject = Column(Text)
     body = Column(Text)
     sender = Column(String(255))  # email id and/or name
-    recipients = Column(ARRAY(String))  # email id and/or name as TEXT[]
+    to = Column(ARRAY(String))  # list of To email ids
+    cc = Column(ARRAY(String))  # list of CC email ids
     date = Column(TIMESTAMP(timezone=True))  # TIMESTAMP WITH TIME ZONE
     labels = Column(ARRAY(String(50)))  # inbox/sent/draft etc. as VARCHAR(50)[]
     attachments = Column(JSON)  # e.g., { attachment_id:123, filename: "file.pdf", gdrive_id: "xyz", size:1540}
