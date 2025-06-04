@@ -1,4 +1,5 @@
 version: "3.9"
+
 services:
   postgres:
     image: postgres:15
@@ -8,17 +9,44 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-ragdb}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-raguser} -d ${POSTGRES_DB:-ragdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
+    networks:
+      - ragflow-network
 
   redis:
     image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
+    networks:
+      - ragflow-network
 
   ragflow:
     image: infiniflow/ragflow:latest
     ports:
       - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://raguser:ragpass@postgres:5432/ragdb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - ragflow-network
 
   ollama:
     image: ollama/ollama:latest
@@ -26,10 +54,37 @@ services:
       - "11434:11434"
     volumes:
       - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
+    networks:
+      - ragflow-network
+
+  # Initialize Ollama with required model
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ollama-data:/root/.ollama
+    entrypoint: |
+      sh -c "
+        sleep 10
+        ollama pull mistral:7b-instruct-v0.3 || echo 'Model pull failed, continuing...'
+        echo 'Ollama initialization complete'
+      "
+    networks:
+      - ragflow-network
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     env_file: .env
     environment:
       POSTGRES_HOST: postgres
@@ -37,25 +92,45 @@ services:
       RAGFLOW_HOST: http://ragflow:3000
       OLLAMA_HOST: http://ollama:11434
     depends_on:
-      - postgres
-      - redis
-      - ragflow
-      - ollama
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+      ragflow:
+        condition: service_healthy
     ports:
       - "8000:8000"
-    command: ["bash", "scripts/run_server.sh"]
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/logs:/app/logs
+      - ./backend/config:/app/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     restart: unless-stopped
+    networks:
+      - ragflow-network
 
   frontend:
     build: ./frontend
     ports:
       - "8080:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - ragflow-network
 
   worker:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     env_file: .env
     environment:
       POSTGRES_HOST: postgres
@@ -63,13 +138,28 @@ services:
       RAGFLOW_HOST: http://ragflow:3000
       OLLAMA_HOST: http://ollama:11434
     depends_on:
-      - postgres
-      - redis
-      - ragflow
-      - ollama
-    command: ["bash", "scripts/run_worker.sh"]
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+      ragflow:
+        condition: service_healthy
+    command: ["python", "-c", "from app.queue.tasks import start_worker; start_worker()"]
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/logs:/app/logs
+      - ./backend/config:/app/config
     restart: unless-stopped
+    networks:
+      - ragflow-network
 
 volumes:
   postgres-data:
   ollama-data:
+
+networks:
+  ragflow-network:
+    driver: bridge
+
