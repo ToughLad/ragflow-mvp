@@ -40,7 +40,7 @@ services:
 
   # RAGFlow Vector Database
   ragflow:
-    image: infiniflow/ragflow:latest
+    image: infiniflow/ragflow:v0.15.0
     container_name: ragflow_server
     ports:
       - "9380:9380"
