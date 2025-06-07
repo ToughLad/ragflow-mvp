@@ -5,11 +5,22 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.db import get_db, models
-from app.queue.tasks import get_queue_status
 from app.scheduler.daily_scheduler import get_scheduler_status
 from app.ragflow.client import list_knowledge_bases
 
 router = APIRouter()
+
+def get_queue_status():
+    """Get queue status locally to avoid circular import."""
+    try:
+        from app.queue.tasks import get_queue_status as _get_queue_status
+        return _get_queue_status()
+    except ImportError:
+        return {
+            'email_queue': {'pending': 0, 'failed': 0, 'started': 0},
+            'document_queue': {'pending': 0, 'failed': 0, 'started': 0},
+            'digest_queue': {'pending': 0, 'failed': 0, 'started': 0}
+        }
 
 @router.get("/status")
 async def system_status(db: Session = Depends(get_db)):

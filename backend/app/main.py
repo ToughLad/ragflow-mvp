@@ -14,6 +14,7 @@ from app.db import crud
 from app.llm.summarizer import summarize_email, summarize_document
 from app.scheduler.daily_scheduler import start_scheduler, stop_scheduler, get_scheduler_status
 from app.config import get_settings
+from app.api.monitoring import router as monitoring_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -28,6 +29,9 @@ async def lifespan(app: FastAPI):
     engine.dispose()
 
 app = FastAPI(title="RAGFlow MVP API", lifespan=lifespan)
+
+# Include monitoring router
+app.include_router(monitoring_router, prefix="/api/monitoring", tags=["monitoring"])
 
 def get_db():
     db = SessionLocal()
