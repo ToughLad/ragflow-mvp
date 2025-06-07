@@ -111,17 +111,19 @@ def exchange_code_for_token(code: str, email: str, token_path: str = "token.json
     flow = setup_oauth_flow()
     flow.fetch_token(code=code)
     
-    # Save credentials to file
+    # Save credentials to file (for backwards compatibility)
     creds = flow.credentials
     with open(token_path, 'w') as token_file:
         token_file.write(creds.to_json())
     
+    # Store credentials for specific email
     store_oauth_token(email, creds)
 
     return {
         "access_token": creds.token,
         "refresh_token": creds.refresh_token,
-        "expires_at": creds.expiry.isoformat() if creds.expiry else None
+        "expires_at": creds.expiry.isoformat() if creds.expiry else None,
+        "email": email
     }
 
 def refresh_token_if_needed(token_path: str = "token.json") -> bool:
@@ -207,8 +209,48 @@ def setup_domain_wide_delegation(user_email: str, token_path: str = "token.json"
             log.error(f"Fallback OAuth also failed: {fallback_error}")
             raise RuntimeError(f"All authentication methods failed for {user_email}")
 
+def get_credentials_for_email(email_address: str) -> Optional[Credentials]:
+    """Get stored OAuth credentials for specific email address."""
+    db = SessionLocal()
+    try:
+        inbox = db.query(Inbox).filter(Inbox.email_address == email_address).first()
+        if not inbox or not inbox.oauth_token:
+            return None
+        
+        try:
+            token_data = json.loads(decrypt_token(inbox.oauth_token))
+            creds = Credentials(
+                token=token_data.get('token'),
+                refresh_token=token_data.get('refresh_token'),
+                token_uri=token_data.get('token_uri'),
+                client_id=token_data.get('client_id'),
+                client_secret=token_data.get('client_secret')
+            )
+            
+            # Refresh if expired
+            if creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+                # Update stored token
+                store_oauth_token(email_address, creds)
+            
+            return creds
+        except Exception as e:
+            log.error(f"Failed to load credentials for {email_address}: {e}")
+            return None
+    finally:
+        db.close()
+
 def get_service_for_email(email_address: str, token_path: str = "token.json"):
     """Get Gmail service for specific email address, handling domain-wide access."""
+    # First try to get stored credentials for this specific email
+    creds = get_credentials_for_email(email_address)
+    if creds:
+        try:
+            return build('gmail', 'v1', credentials=creds, cache_discovery=False)
+        except Exception as e:
+            log.warning(f"Failed to use stored credentials for {email_address}: {e}")
+    
+    # Fallback to existing logic
     if email_address.endswith('@ivc-valves.com'):
         # Use domain-wide delegation for company emails
         return setup_domain_wide_delegation(email_address, token_path)

@@ -3,52 +3,303 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RAGFlow MVP</title>
+  <title>RAGFlow MVP - Complete Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Auth status bar -->
+  <div id="authStatus" class="auth-status">
+    <span id="authMessage">Checking authentication...</span>
+    <button id="refreshAuthBtn" class="btn-small">Refresh Status</button>
+  </div>
+
   <nav>
-    <button data-tab="search">Search</button>
-    <button data-tab="emails">Emails</button>
-    <button data-tab="documents">Documents</button>
-    <button data-tab="queue">Queue</button>
+    <button data-tab="auth">🔐 Authentication</button>
+    <button data-tab="chat">💬 LLM Chat</button>
+    <button data-tab="search">🔍 RAG Search</button>
+    <button data-tab="emails">📧 Email Database</button>
+    <button data-tab="documents">📁 Documents</button>
+    <button data-tab="admin">⚙️ System Admin</button>
   </nav>
+  
   <div id="content">
-    <section id="search" class="tab active">
-      <h2>Search</h2>
-      <input type="text" id="query" placeholder="Ask a question" />
-      <button id="searchBtn">Search</button>
-      <pre id="searchResult"></pre>
+    <!-- Authentication Tab -->
+    <section id="auth" class="tab active">
+      <h2>🔐 Gmail Authentication Manager</h2>
+      <div class="auth-container">
+        <div class="auth-info">
+          <h3>📋 Quick Setup:</h3>
+          <ol>
+            <li>Add Gmail inboxes you want to monitor</li>
+            <li>Click "Auto-Authenticate All" for quick setup</li>
+            <li>Or authenticate each inbox individually</li>
+            <li>Start email processing when ready</li>
+          </ol>
+        </div>
+        
+        <!-- Dynamic Inbox Management -->
+        <div class="inbox-management">
+          <h3>📥 Manage Gmail Inboxes:</h3>
+          <div class="add-inbox-form">
+            <input type="email" id="newInboxEmail" placeholder="Enter Gmail address (e.g., user@company.com)" />
+            <input type="text" id="newInboxDescription" placeholder="Description (optional)" />
+            <button id="addInboxBtn" class="btn-primary">Add Inbox</button>
+          </div>
+        </div>
+        
+        <div class="inbox-list">
+          <h3>📋 Configure Gmail Inboxes:</h3>
+          <div class="inbox-actions-bar">
+            <button id="autoAuthAllBtn" class="btn-success">🚀 Auto-Authenticate All</button>
+            <button id="checkAllAuthBtn" class="btn-primary">🔄 Check All Status</button>
+            <button id="removeAllBtn" class="btn-danger">🗑️ Remove All</button>
+          </div>
+          <div id="inboxAuthList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+        
+        <div class="auth-actions">
+          <button id="startProcessingBtn" class="btn-success" disabled>▶️ Start Email Processing</button>
+          <button id="stopProcessingBtn" class="btn-warning">⏹️ Stop Processing</button>
+          <button id="forceResyncBtn" class="btn-info">🔄 Force Re-sync All</button>
+        </div>
+        
+        <div class="auth-status-details">
+          <h3>📊 Authentication Status:</h3>
+          <div id="authStatusDetails">
+            <!-- Status details will be populated here -->
+          </div>
+        </div>
+      </div>
     </section>
+
+    <!-- LLM Chat Tab -->
+    <section id="chat" class="tab">
+      <h2>💬 Direct LLM Chat</h2>
+      <div class="chat-container">
+        <div class="chat-info">
+          <p>Chat directly with the local Mistral 7B model (same one used for email summarization)</p>
+          <div class="model-status">
+            <span>Model: <strong id="currentModel">mistral:7b-instruct-v0.3</strong></span>
+            <span>Status: <span id="modelStatus" class="status-badge">Checking...</span></span>
+          </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-message system">
+            <strong>System:</strong> LLM chat ready! Ask me anything about your emails, documents, or general questions.
+          </div>
+        </div>
+        
+        <div class="chat-input-container">
+          <textarea id="chatInput" placeholder="Type your message here... (Press Ctrl+Enter to send)" rows="3"></textarea>
+          <div class="chat-controls">
+            <button id="sendChatBtn" class="btn-primary">Send Message</button>
+            <button id="clearChatBtn" class="btn-secondary">Clear Chat</button>
+            <label>
+              <input type="checkbox" id="ragModeToggle"> Use RAG (search emails/docs)
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Enhanced Search Tab -->
+    <section id="search" class="tab">
+      <h2>🔍 RAG-Powered Search</h2>
+      <div class="search-container">
+        <div class="search-info">
+          <p>Search across all indexed emails and documents using vector similarity</p>
+          <div class="search-stats">
+            <span>Knowledge Bases: <span id="kbCount">Loading...</span></span>
+            <span>Last Updated: <span id="lastIndexed">Unknown</span></span>
+          </div>
+        </div>
+        
+        <div class="search-input-section">
+          <div class="search-form">
+            <textarea id="query" placeholder="Ask questions like: 'Show me urgent emails about quality issues' or 'Find documents about valve specifications'" rows="2"></textarea>
+            <div class="search-controls">
+              <button id="searchBtn" class="btn-primary">🔍 Search</button>
+              <button id="advancedSearchBtn" class="btn-secondary">⚙️ Advanced</button>
+              <select id="searchScope">
+                <option value="all">All Content</option>
+                <option value="emails">Emails Only</option>
+                <option value="documents">Documents Only</option>
+                <option value="attachments">Attachments Only</option>
+              </select>
+            </div>
+          </div>
+          
+          <div id="advancedSearchOptions" class="advanced-search" style="display: none;">
+            <div class="advanced-controls">
+              <label>Date Range:</label>
+              <input type="date" id="dateFrom" />
+              <input type="date" id="dateTo" />
+              
+              <label>Priority:</label>
+              <select id="priorityFilter">
+                <option value="">All Priorities</option>
+                <option value="Urgent">Urgent</option>
+                <option value="Normal">Normal</option>
+                <option value="Low Priority">Low Priority</option>
+              </select>
+              
+              <label>Category:</label>
+              <input type="text" id="categoryFilter" placeholder="e.g., Purchase Order, Invoice" />
+            </div>
+          </div>
+        </div>
+        
+        <div class="search-results">
+          <div id="searchResultsSummary" class="results-summary"></div>
+          <div id="searchResults" class="results-container"></div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Enhanced Email Database Tab -->
     <section id="emails" class="tab">
-      <h2>Emails</h2>
-      <div>
-        <label>Inbox:</label>
-        <select id="emailInbox" multiple></select>
-        <label>Category:</label>
-        <input type="text" id="emailCategory" placeholder="Category" />
-        <button id="loadEmails">Load</button>
+      <h2>📧 Email Database Explorer</h2>
+      <div class="email-container">
+        <div class="email-controls">
+          <div class="filters-section">
+            <h3>🔍 Filters & Search:</h3>
+            <div class="filter-row">
+              <select id="emailInbox" multiple>
+                <!-- Populated dynamically -->
+              </select>
+              <select id="emailCategory">
+                <option value="">All Categories</option>
+                <option value="Purchase Order">Purchase Order</option>
+                <option value="Invoice">Invoice</option>
+                <option value="Quality Assurance">Quality Assurance</option>
+                <option value="Customer Sales Inquiry">Customer Sales Inquiry</option>
+                <option value="Maintenance/Repair">Maintenance/Repair</option>
+                <!-- More options populated dynamically -->
+              </select>
+              <select id="emailPriority">
+                <option value="">All Priorities</option>
+                <option value="Urgent">Urgent</option>
+                <option value="Normal">Normal</option>
+                <option value="Low Priority">Low Priority</option>
+              </select>
+            </div>
+            <div class="filter-row">
+              <input type="text" id="emailSenderFilter" placeholder="Filter by sender..." />
+              <input type="date" id="emailDateFrom" />
+              <input type="date" id="emailDateTo" />
+              <button id="loadEmails" class="btn-primary">🔍 Search Emails</button>
+              <button id="resetEmailFilters" class="btn-secondary">🔄 Reset</button>
+            </div>
+          </div>
+          
+          <div class="actions-section">
+            <h3>⚡ Quick Actions:</h3>
+            <div class="action-buttons">
+              <button id="refreshAllInboxes" class="btn-success">🔄 Refresh All Inboxes</button>
+              <button id="generateDigest" class="btn-info">📊 Generate Daily Digest</button>
+              <button id="exportEmails" class="btn-secondary">📤 Export Results</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="email-stats">
+          <div class="stat-card">
+            <h4>Total Emails</h4>
+            <span id="totalEmailCount">-</span>
+          </div>
+          <div class="stat-card">
+            <h4>Processed Today</h4>
+            <span id="todayEmailCount">-</span>
+          </div>
+          <div class="stat-card">
+            <h4>Urgent Emails</h4>
+            <span id="urgentEmailCount">-</span>
+          </div>
+          <div class="stat-card">
+            <h4>Categories</h4>
+            <span id="categoryCount">-</span>
+          </div>
+        </div>
+        
+        <div class="email-results">
+          <div id="emailResultsHeader" class="results-header">
+            <span id="emailResultsCount">No emails loaded</span>
+            <div class="pagination-controls">
+              <button id="prevEmailPage" class="btn-small">← Prev</button>
+              <span id="emailPageInfo">Page 1 of 1</span>
+              <button id="nextEmailPage" class="btn-small">Next →</button>
+            </div>
+          </div>
+          <div id="emailList" class="email-list">
+            <!-- Email results will be populated here -->
+          </div>
+        </div>
       </div>
-      <ul id="emailList"></ul>
     </section>
+    
+    <!-- Documents Tab -->
     <section id="documents" class="tab">
-      <h2>Documents</h2>
-      <div>
-        <label>Type:</label>
-        <input type="text" id="docType" placeholder="source type" />
-        <label>Category:</label>
-        <input type="text" id="docCategory" placeholder="category" />
-        <button id="loadDocs">Load</button>
+      <h2>📁 Document Database</h2>
+      <div class="document-container">
+        <div class="document-controls">
+          <div class="filter-row">
+            <input type="text" id="docType" placeholder="Document type (pdf, doc, etc.)" />
+            <input type="text" id="docCategory" placeholder="Category filter..." />
+            <button id="loadDocs" class="btn-primary">🔍 Search Documents</button>
+            <button id="processNewDocs" class="btn-success">📥 Process New Documents</button>
+          </div>
+        </div>
+        <div id="documentStats" class="document-stats">
+          <!-- Stats will be populated -->
+        </div>
+        <ul id="docList" class="document-list">
+          <!-- Document results -->
+        </ul>
       </div>
-      <ul id="docList"></ul>
     </section>
-    <section id="queue" class="tab">
-      <h2>Processing Queue</h2>
-      <div>
-        <button id="prevPage">Prev</button>
-        <button id="nextPage">Next</button>
+    
+    <!-- System Admin Tab -->
+    <section id="admin" class="tab">
+      <h2>⚙️ System Administration</h2>
+      <div class="admin-container">
+        <div class="admin-section">
+          <h3>📊 System Status</h3>
+          <div class="status-grid" id="systemStatus">
+            <!-- System status will be populated -->
+          </div>
+        </div>
+        
+        <div class="admin-section">
+          <h3>🔄 Processing Queue</h3>
+          <div class="queue-controls">
+            <button id="prevPage">← Prev</button>
+            <button id="nextPage">Next →</button>
+            <button id="clearQueue" class="btn-warning">🗑️ Clear Queue</button>
+          </div>
+          <ul id="queueList" class="queue-list">
+            <!-- Queue items -->
+          </ul>
+        </div>
+        
+        <div class="admin-section">
+          <h3>📅 Scheduler Status</h3>
+          <div id="schedulerStatus">
+            <!-- Scheduler info -->
+          </div>
+        </div>
+        
+        <div class="admin-section">
+          <h3>🗄️ Database Management</h3>
+          <div class="db-actions">
+            <button id="backupDb" class="btn-info">💾 Backup Database</button>
+            <button id="optimizeDb" class="btn-secondary">⚡ Optimize Database</button>
+            <button id="viewLogs" class="btn-secondary">📋 View Logs</button>
+          </div>
+        </div>
       </div>
-      <ul id="queueList"></ul>
     </section>
   </div>
   <script src="script.js"></script>
