@@ -1,293 +1,546 @@
 # RAGFlow MVP - Complete System Overview
 
-## 🎉 **System Enhancement Complete!**
+## Project Vision & Future Roadmap
 
-Your RAGFlow MVP has been completely transformed into a powerful, all-in-one dashboard for managing Gmail inboxes, chatting with LLM, searching documents, and administering the entire system through a beautiful web interface.
+This RAGFlow MVP is the foundation for Indian Valve Company's (IVC) complete AI transformation. After this phase, the roadmap includes:
 
----
+- **Phase 2**: Agents for automated daily/weekly reports via email/WhatsApp
+- **Phase 3**: External data integration (tender databases, web scraping)
+- **Phase 4**: SAP ERP integration with OCR for vendor bills, orders, challans
+- **Phase 5**: AI manager suite monitoring all data and taking business actions
+- **Phase 6**: Multi-modal chatbots (text/audio) for internal and external communication
+- **Phase 7**: AI hiring agent for resume screening and interviews
+- **Phase 8**: AI training agent for internal employee development
 
-## 🏗️ **Complete System Architecture**
+## Current Phase Goals
 
-### **Frontend Dashboard** 
-- **🔐 Authentication Tab**: Dynamic inbox management with auto-authentication
-- **💬 LLM Chat Tab**: Direct chat with Mistral 7B (RAG mode toggle)  
-- **🔍 RAG Search Tab**: Enhanced vector search across all indexed content
-- **📧 Email Database Tab**: Comprehensive email explorer with filters
-- **📁 Documents Tab**: Document management and processing
-- **⚙️ System Admin Tab**: Queue monitoring, scheduler status, system health
+### Primary Objectives
+1. **Daily Email Digest**: Automated summary of previous 24 hours across all inboxes → `tony@ivc-valves.com`
+2. **Weekly Sales Digest**: Summary of quotations sent and sales inquiries received
+3. **Complete Email Intelligence**: Process, categorize, and make searchable all company emails
+4. **Document Processing**: OCR and categorization of Google Drive documents
+5. **RAG-Powered Search**: Semantic search across all indexed content
 
-### **Backend Services**
-- **FastAPI**: 25+ API endpoints for complete system control
-- **PostgreSQL**: Structured data storage with proper relationships
-- **RAGFlow**: Vector database for semantic search
-- **Ollama**: Local Mistral 7B LLM for summarization and chat
-- **Redis**: Background job queue management
-- **Scheduler**: Automated daily processing and digest generation
+## System Architecture
 
----
+### Core Components
 
-## 🔄 **Complete Email Processing Workflow**
-
-### **1. Email Ingestion & Processing**
-```mermaid
-graph TD
-    A[Gmail Inboxes] --> B[OAuth Authentication]
-    B --> C[Email Fetcher]
-    C --> D[Content Extraction]
-    D --> E[Attachment Processing]
-    E --> F[LLM Summarization]
-    F --> G[Database Storage]
-    G --> H[RAGFlow Indexing]
-    H --> I[Search Ready]
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Gmail API     │    │  Google Drive   │    │   Frontend      │
+│   OAuth 2.0     │    │   Documents     │    │   Web UI        │
+└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
+          │                      │                      │
+          ▼                      ▼                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Backend API Server                           │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
+│  │   Gmail     │  │   Drive     │  │    LLM      │            │
+│  │  Fetcher    │  │  Processor  │  │ Summarizer  │            │
+│  └─────────────┘  └─────────────┘  └─────────────┘            │
+└─────────┬───────────────────┬───────────────────┬─────────────┘
+          │                   │                   │
+          ▼                   ▼                   ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│   PostgreSQL    │  │    RAGFlow      │  │     Ollama      │
+│   Database      │  │ Vector Search   │  │ Mistral 7B LLM  │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
 ```
 
-### **2. Detailed Processing Steps**
+### Technology Stack
 
-#### **Email Fetching** (`gmail_fetcher.py`)
-- **OAuth Authentication**: Per-inbox authentication with refresh token management
-- **Deduplication**: RFC-822 hash prevents duplicate emails across CC/BCC
-- **Content Extraction**: HTML/text body parsing with disclaimer stripping
-- **Attachment Handling**: OCR for PDFs/images, Google Drive upload
+- **Backend**: FastAPI (Python)
+- **Database**: PostgreSQL with proper relationships and deduplication
+- **Vector Search**: RAGFlow for semantic search and knowledge bases
+- **LLM**: Ollama with Mistral-7B-Instruct-v0.3 (local deployment)
+- **Queue**: Redis for job processing
+- **OCR**: Tesseract + PyPDF2 for document text extraction
+- **Authentication**: Google OAuth 2.0 with domain-wide delegation
+- **Frontend**: Modern HTML5/CSS3/JavaScript with responsive design
 
-#### **LLM Summarization** (`summarizer.py`)
-- **Structured Prompts**: Business-specific prompts for Indian Valve Company
-- **Email Analysis**: Summary, urgency, sentiment, category, keywords
-- **Attachment Processing**: Separate summarization for all file types
-- **Quality Categories**: 22+ predefined business categories
+## Database Schema
 
-#### **RAGFlow Integration** (`ragflow/client.py`)
-- **Knowledge Base Creation**: Per-inbox KBs for organized search
-- **Vector Indexing**: Emails + attachments + summaries indexed
-- **Metadata Enrichment**: Rich metadata for precise search filtering
-- **Retrieval System**: Semantic search with similarity scoring
+### Core Tables
 
-### **3. Authentication & Security**
-- **Per-Inbox OAuth**: Each Gmail inbox authenticated separately
-- **Token Management**: Automatic refresh, encrypted storage
-- **Domain-Wide Support**: Ready for G Suite domain delegation
-- **Secure Storage**: Encrypted OAuth tokens in PostgreSQL
+#### 1. Emails Table
+```sql
+CREATE TABLE emails (
+    email_id UUID PRIMARY KEY,
+    message_id VARCHAR(255),       -- Gmail message ID
+    thread_id VARCHAR(16),         -- Gmail thread ID
+    subject TEXT,
+    body TEXT,
+    sender VARCHAR(255),           -- From email and name
+    to TEXT[],                     -- Array of To recipients
+    cc TEXT[],                     -- Array of CC recipients
+    date TIMESTAMPTZ,
+    labels VARCHAR(50)[],          -- Gmail labels (inbox/sent/draft)
+    attachments JSONB,             -- Attachment metadata
+    summary TEXT,                  -- LLM-generated summary
+    category VARCHAR(50),          -- Business category
+    priority VARCHAR(15),          -- Urgent/Normal/Low Priority
+    sentiment VARCHAR(10),         -- Positive/Neutral/Negative
+    importance VARCHAR(15),        -- Very Important/Normal/Low Importance
+    keywords TEXT[],               -- 3-5 key phrases
+    processed BOOLEAN DEFAULT FALSE,
+    rfc822_hash VARCHAR(64)        -- SHA-256 for deduplication
+);
+```
 
----
+#### 2. Email Attachments Table
+```sql
+CREATE TABLE email_attachments (
+    attachment_id INT PRIMARY KEY AUTO_INCREMENT,
+    email_id UUID REFERENCES emails(email_id),
+    file_name VARCHAR(255),
+    mime_type VARCHAR(100),
+    gdrive_id VARCHAR(44),         -- Google Drive file ID
+    size INTEGER,
+    content TEXT,                  -- Extracted text content
+    summary TEXT,                  -- LLM-generated summary
+    category VARCHAR(50),          -- Document category
+    priority VARCHAR(15),          -- Urgent/Normal/Low Priority
+    sentiment VARCHAR(10),         -- Positive/Neutral/Negative
+    importance VARCHAR(15),        -- Very Important/Normal/Low Importance
+    keywords TEXT[],               -- Key phrases
+    processed BOOLEAN DEFAULT FALSE
+);
+```
 
-## 🎯 **Key Features Implemented**
+#### 3. Documents Table (Google Drive)
+```sql
+CREATE TABLE documents (
+    doc_id UUID PRIMARY KEY,
+    gdrive_id VARCHAR(44),         -- Google Drive file ID
+    source_type VARCHAR(50),       -- pdf/doc/image/etc
+    content TEXT,                  -- Extracted text
+    summary TEXT,                  -- LLM-generated summary
+    doc_metadata JSONB,            -- File metadata
+    category VARCHAR(50),          -- Document category
+    priority VARCHAR(15),          -- Urgent/Normal/Low Priority
+    sentiment VARCHAR(10),         -- Positive/Neutral/Negative
+    importance VARCHAR(15),        -- Very Important/Normal/Low Importance
+    keywords TEXT[],               -- Key phrases
+    processed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
 
-### **✅ Dynamic Inbox Management**
-- Add/remove Gmail inboxes via web UI
-- Auto-authenticate all inboxes with one click
-- Real-time authentication status monitoring
-- Bulk operations for inbox management
+#### 4. Inboxes Table
+```sql
+CREATE TABLE inboxes (
+    inbox_id INT PRIMARY KEY AUTO_INCREMENT,
+    email_address VARCHAR(255) UNIQUE NOT NULL,
+    description TEXT,
+    oauth_token TEXT,              -- Encrypted OAuth refresh token
+    token_expires_at TIMESTAMPTZ,  -- Token expiration
+    last_history_id VARCHAR(50),   -- Gmail history ID for incremental sync
+    last_sync_time TIMESTAMPTZ,    -- Last successful sync
+    is_active BOOLEAN DEFAULT TRUE
+);
+```
 
-### **✅ LLM Chat Interface**
-- Direct chat with local Mistral 7B model
-- RAG mode for context-aware responses
-- Chat history and conversation management
-- Keyboard shortcuts (Ctrl+Enter to send)
+## Email Processing Workflow
 
-### **✅ Enhanced Search System**
-- Advanced filters (date range, priority, category)
-- Multiple search scopes (emails, documents, attachments)
-- Real-time search with result highlighting
-- Knowledge base status monitoring
+### 1. Authentication & Authorization
 
-### **✅ Email Database Explorer**
-- Comprehensive email filtering and sorting
-- Pagination with large dataset support
-- Quick action buttons (refresh, digest, export)
-- Real-time statistics dashboard
+**Domain-Wide Delegation** (for @ivc-valves.com emails):
+- Client ID: `792999098406-hmolqmci0o9op9t2vpknmhespml53bau.apps.googleusercontent.com`
+- Client Secret: `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`
+- Scope: `https://www.googleapis.com/auth/gmail.readonly`
 
-### **✅ System Administration**
-- Processing queue monitoring
-- Scheduler status and job management
-- System health checks
-- Database and Redis status monitoring
+**Individual OAuth** (for @gmail.com accounts):
+- Each inbox requires separate OAuth authorization
+- Popup-based authentication in web UI
+- Automatic token refresh handling
 
----
+### 2. Email Fetching Sequence
 
-## 📋 **Setup Instructions**
+Emails are processed in this exact order (as specified):
+1. `storesnproduction@ivc-valves.com` (60 MB)
+2. `hr.ivcvalves@gmail.com` (851 inbox, 546 sent - personal Gmail for testing)
+3. `umesh.jadhav@ivc-valves.com` (0.5 GB)
+4. `arpatil@ivc-valves.com` (0.7 GB)
+5. `exports@ivc-valves.com` (1.5 GB)
+6. `sumit.basu@ivc-valves.com` (1.6 GB)
+7. `hr@ivc-valves.com` (1.7 GB)
 
-### **1. Environment Configuration**
+### 3. Email Processing Pipeline
 
-Create `.env` file in `backend/` directory:
+```
+Gmail API → Email Extraction → Content Cleaning → LLM Analysis → Database Storage → RAGFlow Indexing
+```
+
+#### Step 1: Email Extraction
+- Fetch emails via Gmail API
+- Extract headers (From, To, CC, Date, Subject)
+- Extract plain text body (no HTML)
+- Remove disclaimers and virus warnings
+- Process attachments
+
+#### Step 2: Content Cleaning
+- Strip HTML tags and formatting
+- Remove email disclaimers (patterns: "Disclaimer:", "WARNING:")
+- Preserve email signatures
+- Clean OCR text from attachments using domain-specific LLM correction
+
+#### Step 3: LLM Analysis
+Uses **Mistral-7B-Instruct-v0.3** with specialized prompts:
+
+**Email Analysis Prompt**:
+```
+You are an intelligent email assistant for Indian Valve (IVC), a valve manufacturing company...
+
+Given the email below (including subject, email header and body), perform the following tasks:
+- Summary (3–5 sentences)
+- Urgency: Urgent / Normal / Low Priority  
+- Sentiment: Positive / Neutral / Negative
+- Importance: Very Important / Normal / Low Importance
+- Keywords: 3–5 important keywords
+- Category: [22+ business-specific categories]
+```
+
+**Categories for Emails**:
+- Delay/Follow-up/Reminder/Pending/Shortage
+- Maintenance/Repair/Problem/Defect/Issue/Support Request
+- Drawing/GAD
+- Inspection/TPI
+- Quality Assurance/QAP
+- Customer Sales Inquiry/Request for Quotation
+- Customer Quotation
+- Quotation from Vendor/Supplier
+- Project Documentation/Approval Process
+- Job Application
+- Purchase Order
+- Advance Bank Guarantee/ABG
+- Performance Bank Guarantee/PBG
+- Financial Compliance/Document Submission
+- Documentation/Compliance
+- Vendor Invoice/Bill/Outgoing Payment/Due
+- Customer Invoice/Incoming Payment/LC/Letter of Credit/RTGS
+- Unsolicited marketing/Newsletter/Promotion
+- Operations/Logistics
+
+#### Step 4: Database Storage
+- Store email with RFC-822 hash for deduplication
+- Link to multiple inboxes via `email_recipients` table
+- Store all LLM analysis results
+- Track processing status
+
+#### Step 5: RAGFlow Indexing
+- Create separate knowledge base per inbox
+- Push email content + summary + metadata
+- Enable semantic search across all content
+- Maintain document relationships
+
+## Attachment Processing
+
+### 1. Supported File Types
+- **Text files**: Direct text extraction
+- **PDF files**: PyPDF2 + OCR fallback
+- **Images**: Tesseract OCR
+- **Word documents**: python-docx (planned)
+- **Excel files**: pandas (planned)
+
+### 2. OCR Error Correction
+Advanced LLM-based OCR correction using domain-specific context:
+
+```
+You are an advanced text correction model specializing in fixing OCR errors...
+The document belongs to Indian Valve Company (IVC), a valve manufacturing firm...
+Apply domain context to resolve ambiguities and maintain proper formatting.
+```
+
+### 3. Google Drive Integration
+- Upload all attachments to "RAG-Email Attachments" folder
+- Store Google Drive file IDs for reference
+- Maintain original filenames and metadata
+
+## Google Drive Document Processing
+
+### 1. Source Folders
+- **RAG-IVC Documents**: `1oas1TEtW26ZNvW2jekk6Y8R2Hb85IUmn`
+- **RAG-Email Attachments**: `1dEjEogfE3WlHypaY8vuaWiBeZjjuVTGV`
+
+### 2. Processing Pipeline
+```
+Google Drive API → File Download → OCR/Text Extraction → LLM Analysis → Database Storage → RAGFlow Indexing
+```
+
+### 3. Knowledge Base Mapping
+- Each 1st level folder → Separate RAGFlow knowledge base
+- Each inbox → Separate RAGFlow knowledge base
+- Enables future access control by department/inbox
+- Global search across all knowledge bases
+
+## Web Interface Features
+
+### 1. Authentication Tab 🔐
+- **Auto-Authenticate All**: One-click OAuth for all inboxes
+- **Individual Inbox Management**: Add/remove inboxes dynamically
+- **Real-time Status**: Visual indicators for authentication status
+- **Token Management**: Automatic refresh and encrypted storage
+
+### 2. LLM Chat Tab 💬
+- **Direct Chat**: Communicate with Mistral 7B LLM
+- **RAG Mode Toggle**: Enable context-aware responses using indexed content
+- **Conversation History**: Maintain chat sessions
+- **Model Settings**: Adjust temperature, top-k, top-p parameters
+
+### 3. RAG Search Tab 🔍
+- **Semantic Search**: Natural language queries across all content
+- **Advanced Filters**: Date range, priority, category, inbox selection
+- **Scope Selection**: Search emails, documents, or both
+- **Real-time Results**: Instant search with relevance scoring
+
+### 4. Email Database Tab 📧
+- **Comprehensive Filtering**: Category, inbox, priority, sentiment, importance
+- **Date Range Selection**: Custom date filtering
+- **Pagination**: Handle large datasets efficiently
+- **Quick Actions**: View details, mark as processed, export
+- **Real-time Statistics**: Email counts by category and status
+
+### 5. Documents Tab 📁
+- **Google Drive Integration**: Browse and search documents
+- **Category Filtering**: Filter by document type and category
+- **Processing Status**: Track OCR and analysis progress
+- **Metadata Display**: File size, type, processing date
+
+### 6. System Admin Tab ⚙️
+- **Queue Monitoring**: View processing queue status
+- **Scheduler Status**: Monitor background jobs
+- **System Health**: Check service connectivity
+- **Performance Metrics**: Processing speeds and success rates
+
+## API Endpoints
+
+### Authentication
+- `POST /auth/start/{inbox}` - Start OAuth flow for inbox
+- `GET /auth/callback` - Handle OAuth callback
+- `GET /auth/status` - Check authentication status
+- `POST /auth/refresh/{inbox}` - Refresh OAuth token
+
+### Email Management
+- `GET /api/emails` - List emails with filtering
+- `GET /api/emails/{email_id}` - Get email details
+- `POST /api/emails/search` - Search emails
+- `GET /api/emails/stats` - Get email statistics
+
+### Document Management
+- `GET /api/documents` - List documents with filtering
+- `GET /api/documents/{doc_id}` - Get document details
+- `POST /api/documents/search` - Search documents
+
+### LLM Integration
+- `POST /api/llm/chat` - Chat with LLM
+- `POST /api/llm/rag-search` - RAG-powered search
+- `GET /api/llm/models` - List available models
+
+### System Administration
+- `GET /api/system/status` - System health check
+- `GET /api/system/queue` - Processing queue status
+- `POST /api/system/process` - Trigger processing
+- `GET /api/system/stats` - System statistics
+
+## Deployment & Configuration
+
+### 1. Docker Compose Setup
+```yaml
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ragflow_db
+      POSTGRES_USER: ragflow
+      POSTGRES_PASSWORD: ragflow123
+    
+  redis:
+    image: redis:7-alpine
+    
+  ragflow:
+    image: infiniflow/ragflow:latest
+    ports:
+      - "9380:9380"
+    
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+      - ragflow
+      - ollama
+```
+
+### 2. Environment Configuration
 ```bash
-# Database
-POSTGRES_USER=ragflow_user
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_DB=ragflow_mvp
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-
-# External Services
-RAGFLOW_HOST=http://ragflow:3000
-RAGFLOW_API_KEY=your_ragflow_api_key
-OLLAMA_HOST=http://ollama:11434
-REDIS_HOST=redis
-REDIS_PORT=6379
-
-# Google OAuth (Get from Google Cloud Console)
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_PROJECT_ID=your_google_project_id
-
-# Gmail Inboxes (comma-separated)
-GMAIL_INBOXES=storesnproduction@ivc-valves.com,hr.ivcvalves@gmail.com,umesh.jadhav@ivc-valves.com,arpatil@ivc-valves.com,exports@ivc-valves.com,sumit.basu@ivc-valves.com,hr@ivc-valves.com
+# Google OAuth
+GOOGLE_CLIENT_ID=792999098406-hmolqmci0o9op9t2vpknmhespml53bau.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
 
 # Google Drive Folders
-ATTACHMENT_FOLDER_ID=1dEjEogfE3WlHypaY8vuaWiBeZjjuVTGV
-DOCUMENTS_FOLDER_ID=1oas1TEtW26ZNvW2jekk6Y8R2Hb85IUmn
+GDRIVE_DOCUMENTS_FOLDER_ID=1oas1TEtW26ZNvW2jekk6Y8R2Hb85IUmn
+GDRIVE_ATTACHMENTS_FOLDER_ID=1dEjEogfE3WlHypaY8vuaWiBeZjjuVTGV
 
-# LLM Configuration
-LLM_MODEL=mistral:7b-instruct-v0.3
-LLM_TEMPERATURE=0.2
-LLM_TOP_K=20
-LLM_TOP_P=0.9
+# Database
+DATABASE_URL=postgresql://ragflow:ragflow123@postgres:5432/ragflow_db
+
+# RAGFlow
+RAGFLOW_HOST=http://ragflow:9380
+RAGFLOW_API_KEY=ragflow-YWRtaW46cmFnZmxvdzEyMw
+
+# Ollama
+OLLAMA_HOST=http://ollama:11434
+LLM_MODEL=mistral:7b-instruct-v0.3-q4_K_M
 ```
 
-### **2. Google OAuth Setup**
-
-Follow the detailed instructions in `GOOGLE_OAUTH_SETUP.md`:
-
-1. Create Google Cloud Project
-2. Enable Gmail and Drive APIs  
-3. Create OAuth 2.0 credentials
-4. Configure authorized redirect URIs
-5. Download credentials JSON
-
-### **3. Docker Deployment**
-
-Start all services:
+### 3. Model Setup
 ```bash
-cd ragflow-mvp
-docker-compose up -d
+# Pull Mistral model
+docker exec -it ollama ollama pull mistral:7b-instruct-v0.3-q4_K_M
+
+# Verify model
+docker exec -it ollama ollama list
 ```
 
-Services will be available at:
-- **Frontend**: http://localhost:8080
-- **Backend API**: http://localhost:8000
-- **RAGFlow**: http://localhost:3000  
-- **Ollama**: http://localhost:11434
+## Performance Optimizations
 
-### **4. Initial Setup**
+### 1. Database Optimizations
+- Indexes on frequently queried fields (date, category, sender)
+- Partitioning for large email tables
+- Connection pooling for concurrent access
 
-1. **Open Web Interface**: Navigate to http://localhost:8080
-2. **Add Gmail Inboxes**: Use the "Add Inbox" form in Authentication tab
-3. **Auto-Authenticate**: Click "Auto-Authenticate All" button
-4. **Start Processing**: Click "Start Email Processing" once authenticated
-5. **Monitor Progress**: Check System Admin tab for queue status
+### 2. LLM Optimizations
+- Prompt caching for repeated patterns
+- Batch processing for multiple emails
+- Temperature optimization for different tasks
 
----
+### 3. RAGFlow Optimizations
+- Separate knowledge bases for better performance
+- Metadata enrichment for faster filtering
+- Chunking strategy for large documents
 
-## 🔧 **API Endpoints Reference**
+### 4. System Resource Management
+- **Day Mode**: 4 concurrent processes, 8 cores, 42GB RAM
+- **Night Mode**: Full server resources (32 cores, 250GB RAM)
+- **Auto-scaling**: Adjust based on queue size
 
-### **Authentication Management**
-- `GET /api/inbox/list` - List configured inboxes
-- `POST /api/inbox/add` - Add new inbox
-- `DELETE /api/inbox/remove` - Remove inbox
-- `GET /api/auth/status` - Check authentication status
-- `POST /api/inbox/refreshAll` - Refresh all inboxes
+## Monitoring & Logging
 
-### **LLM Chat**
-- `POST /api/chat/send` - Send message to LLM
-- `GET /api/llm/status` - Check LLM status
+### 1. Application Logs
+- Structured logging with timestamps
+- Error tracking and alerting
+- Performance metrics collection
 
-### **Search & RAG**
-- `POST /api/search` - Enhanced RAG search
-- `GET /api/ragflow/status` - RAGFlow knowledge base status
-
-### **Email Database**
-- `GET /api/emails` - Search emails with filters
-- `GET /api/emails/stats` - Email statistics
-- `GET /api/emails/{email_id}` - Email details
-
-### **Document Management**
-- `GET /api/documents` - Search documents
-- `POST /api/documents/upload` - Process new documents
-
-### **System Administration**
-- `GET /api/system/status` - Overall system status
-- `GET /api/queue/status` - Processing queue status
-- `GET /api/scheduler/status` - Scheduler status
-- `POST /api/digest/daily` - Generate daily digest
-
----
-
-## 🎯 **Usage Scenarios**
-
-### **Daily Workflow**
-1. **Morning Setup**: Check authentication status, refresh if needed
-2. **Email Processing**: Start email ingestion for new messages
-3. **Search & Analysis**: Use RAG search to find specific information
-4. **LLM Chat**: Ask questions about emails and business context
-5. **Administration**: Monitor system health and queue status
-
-### **Typical Questions for LLM Chat**
-- "Show me urgent emails about quality issues"
-- "Find all purchase orders from last week"
-- "What are the pending delivery requirements?"
-- "Summarize today's customer inquiries"
-
-### **Search Examples**
-- "valve specifications AND delivery schedule"
-- "urgent quality assurance reports"
-- "purchase orders from sumit.basu@ivc-valves.com"
-- "documents about bank guarantees"
-
----
-
-## 🔍 **Indexing System Verification**
-
-### **✅ Complete Email Processing Chain**
-
-1. **Gmail Fetcher** → Pulls emails via OAuth
-2. **Content Extraction** → HTML/text parsing + attachment OCR
-3. **LLM Summarization** → Mistral 7B categorizes and summarizes
-4. **Database Storage** → PostgreSQL with structured schema
-5. **RAGFlow Indexing** → Vector embeddings for semantic search
-6. **Search Interface** → Web UI with advanced filtering
-
-### **✅ Quality Assurance Features**
-- **Deduplication**: RFC-822 hash prevents duplicate processing
-- **Error Handling**: Robust error handling with rollback capability
-- **Status Monitoring**: Real-time processing status in admin panel
-- **Queue Management**: Redis-based background job processing
-
----
-
-## 🚀 **Performance Optimizations**
-
-- **Batch Processing**: Efficient email batch processing
-- **Pagination**: Large dataset handling with pagination
-- **Caching**: Redis caching for frequently accessed data
-- **Parallel Processing**: Async operations where possible
-- **Resource Management**: Proper connection pooling and cleanup
-
----
-
-## 📈 **Monitoring & Maintenance**
-
-### **System Health Checks**
-- Database connectivity monitoring
+### 2. System Monitoring
+- Database connection health
 - RAGFlow service status
-- Ollama LLM availability
-- Redis queue health
+- Ollama model availability
 - OAuth token validity
 
-### **Regular Maintenance**
-- Daily email processing via scheduler
-- Weekly digest generation
-- Token refresh automation
-- Queue cleanup and optimization
-- Database maintenance and backups
+### 3. Business Metrics
+- Emails processed per hour
+- Categorization accuracy
+- Search query performance
+- User engagement statistics
 
----
+## Security Considerations
 
-## 🎉 **Success Metrics**
+### 1. OAuth Security
+- Encrypted token storage
+- Automatic token refresh
+- Scope limitation (read-only access)
 
-Your system now provides:
-- **Single Dashboard**: Complete control via web interface
-- **Auto-Authentication**: Seamless OAuth management
-- **Intelligent Search**: Context-aware document retrieval
-- **LLM Integration**: Direct chat with summarization model
-- **Real-time Monitoring**: System health and performance tracking
-- **Scalable Architecture**: Ready for production deployment
+### 2. Data Protection
+- Database encryption at rest
+- Secure API endpoints
+- Input validation and sanitization
 
-The RAGFlow MVP is now a comprehensive, production-ready email intelligence system that transforms how Indian Valve Company manages and searches through their business communications! 
+### 3. Access Control
+- Role-based access (planned for future phases)
+- Audit logging for sensitive operations
+- Rate limiting on API endpoints
+
+## Future Enhancements (Next Phases)
+
+### 1. Automated Reporting
+- Daily digest emails to `tony@ivc-valves.com`
+- Weekly sales quotation summaries
+- Custom report generation
+
+### 2. Advanced AI Features
+- Sentiment analysis trends
+- Automated follow-up suggestions
+- Priority-based email routing
+
+### 3. Integration Capabilities
+- SAP ERP integration
+- External tender database scraping
+- WhatsApp Business API integration
+
+### 4. Advanced Analytics
+- Email pattern analysis
+- Business intelligence dashboards
+- Predictive analytics for sales
+
+## Troubleshooting Guide
+
+### Common Issues
+
+1. **OAuth Authentication Failures**
+   - Check client ID/secret configuration
+   - Verify redirect URI matches
+   - Ensure proper scopes are requested
+
+2. **LLM Processing Errors**
+   - Verify Ollama service is running
+   - Check model availability
+   - Monitor memory usage
+
+3. **RAGFlow Connection Issues**
+   - Verify RAGFlow service status
+   - Check API key configuration
+   - Test knowledge base creation
+
+4. **Database Connection Problems**
+   - Check PostgreSQL service status
+   - Verify connection string
+   - Monitor connection pool usage
+
+### Performance Issues
+
+1. **Slow Email Processing**
+   - Check Gmail API rate limits
+   - Monitor database query performance
+   - Optimize LLM batch processing
+
+2. **Search Performance**
+   - Verify RAGFlow indexing status
+   - Check knowledge base size
+   - Monitor vector search performance
+
+## Support & Maintenance
+
+### Regular Maintenance Tasks
+- Database backup and cleanup
+- Log rotation and archival
+- OAuth token renewal monitoring
+- Model performance evaluation
+
+### Monitoring Checklist
+- [ ] All services running
+- [ ] OAuth tokens valid
+- [ ] Processing queue healthy
+- [ ] Database performance optimal
+- [ ] Search functionality working
+- [ ] Web interface responsive
+
+This comprehensive system provides the foundation for IVC's complete AI transformation, with robust email intelligence, document processing, and semantic search capabilities. The architecture is designed to scale for the ambitious roadmap ahead! 🚀 

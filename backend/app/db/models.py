@@ -49,6 +49,12 @@ class EmailAttachment(Base):
     gdrive_id = Column(String(44))  # Google Drive file ID
     size = Column(Integer)
     content = Column(Text)  # Extracted text content for RAGFlow indexing
+    summary = Column(Text)
+    category = Column(String(50))
+    priority = Column(String(15))  # Urgent / Normal / Low Priority
+    sentiment = Column(String(10))  # Positive / Neutral / Negative
+    importance = Column(String(15))  # Very Important / Normal / Low Importance
+    keywords = Column(ARRAY(String))  # Array of keywords as TEXT[]
     processed = Column(Boolean, default=False)  # Set to TRUE once OCR done or if no OCR needed
 
 class Inbox(Base):
@@ -60,6 +66,8 @@ class Inbox(Base):
     oauth_token = Column(Text)  # Encrypted OAuth refresh token
     token_expires_at = Column(TIMESTAMP(timezone=True))  # Token expiration
     last_history_id = Column(String(50))  # Gmail history ID for incremental sync
+    last_sync_time = Column(TIMESTAMP(timezone=True))  # Last successful sync timestamp
+    is_active = Column(Boolean, default=True)  # Whether this inbox should be processed
     
     # Relationship to recipients
     email_recipients = relationship("EmailRecipient", back_populates="inbox")
@@ -77,18 +85,19 @@ class EmailRecipient(Base):
 class Document(Base):
     __tablename__ = "documents"
     
-    id = Column(String, primary_key=True, default=gen_uuid)  # UUID PRIMARY KEY
+    doc_id = Column(String, primary_key=True, default=gen_uuid)  # UUID PRIMARY KEY
     gdrive_id = Column(String(44))  # Google Drive file ID
     source_type = Column(String(50))  # pdf/doc/ocr_pdf/xls/jpg etc.
-    extracted_text = Column(Text)
+    content = Column(Text)  # Extracted text content (renamed from extracted_text)
     summary = Column(Text)
     doc_metadata = Column(JSON)  # filename, author, pages, keywords, size
     category = Column(String(50))
-    priority = Column(String(50))  # Urgent / Normal / Low Priority
-    sentiment = Column(String(50))  # Positive / Neutral / Negative
-    importance = Column(String(50))  # Very Important / Normal / Low Importance
+    priority = Column(String(15))  # Urgent / Normal / Low Priority
+    sentiment = Column(String(10))  # Positive / Neutral / Negative
+    importance = Column(String(15))  # Very Important / Normal / Low Importance
     keywords = Column(ARRAY(String))  # Array of keywords as TEXT[]
     processed = Column(Boolean, default=False)
+    created_at = Column(TIMESTAMP(timezone=True), default=datetime.datetime.utcnow)
 
 class ProcessingQueue(Base):
     __tablename__ = "processing_queue"

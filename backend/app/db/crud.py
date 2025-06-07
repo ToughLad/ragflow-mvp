@@ -81,7 +81,7 @@ def get_documents_by_category(db: Session, category: str, limit: int = 100, offs
         .offset(offset).limit(limit).all()
 
 def update_document(db: Session, document_id: str, update_data: dict):
-    db_document = db.query(models.Document).filter(models.Document.id == document_id).first()
+    db_document = db.query(models.Document).filter(models.Document.doc_id == document_id).first()
     if db_document:
         for key, value in update_data.items():
             setattr(db_document, key, value)

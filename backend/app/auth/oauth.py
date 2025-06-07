@@ -240,6 +240,18 @@ def get_credentials_for_email(email_address: str) -> Optional[Credentials]:
     finally:
         db.close()
 
+def setup_domain_wide_auth(email_address: str) -> bool:
+    """Set up domain-wide authentication for @ivc-valves.com emails."""
+    try:
+        service = setup_domain_wide_delegation(email_address)
+        if service:
+            log.info(f"✅ Domain-wide auth set up successfully for {email_address}")
+            return True
+        return False
+    except Exception as e:
+        log.error(f"❌ Failed to set up domain-wide auth for {email_address}: {e}")
+        return False
+
 def get_service_for_email(email_address: str, token_path: str = "token.json"):
     """Get Gmail service for specific email address, handling domain-wide access."""
     # First try to get stored credentials for this specific email

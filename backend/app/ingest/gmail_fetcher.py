@@ -370,7 +370,7 @@ def fetch_and_process():
                         for attachment in attachments_data:
                             if attachment.get('gdrive_id') and attachment.get('content'):
                                 att_summary = summarize_attachment(attachment['content'], inbox)
-                                # Store attachment data in database
+                                # Store attachment data in database with summary fields
                                 crud.create_email_attachment(db, {
                                     'email_id': db_email.email_id,
                                     'file_name': attachment['filename'],
@@ -378,6 +378,12 @@ def fetch_and_process():
                                     'gdrive_id': attachment['gdrive_id'],
                                     'size': attachment.get('size', 0),
                                     'content': attachment['content'],
+                                    'summary': att_summary.get('summary', ''),
+                                    'category': att_summary.get('category', ''),
+                                    'priority': att_summary.get('urgency', 'Normal'),
+                                    'sentiment': att_summary.get('sentiment', 'Neutral'),
+                                    'importance': att_summary.get('importance', 'Normal'),
+                                    'keywords': att_summary.get('keywords', []),
                                     'processed': True
                                 })
                                 

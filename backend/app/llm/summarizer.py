@@ -4,6 +4,7 @@ from app.llm.summary_prompts import (
     EMAIL_PROMPT_TEMPLATE,
     ATTACHMENT_PROMPT_TEMPLATE,
     DOCUMENT_PROMPT_TEMPLATE,
+    OCR_CORRECTION_PROMPT,
 )
 
 settings = get_settings()
@@ -53,9 +54,9 @@ def summarize_email(
     
     return data
 
-def summarize_attachment(document_text: str, email_id: str = "") -> dict:
+def summarize_attachment(document_text: str, inbox_email: str = "") -> dict:
     """Summarize email attachment content using the specified prompt template."""
-    prompt = ATTACHMENT_PROMPT_TEMPLATE.format(document_text=document_text, email_id=email_id)
+    prompt = ATTACHMENT_PROMPT_TEMPLATE.format(document_text=document_text, inbox_email=inbox_email)
     
     resp = requests.post(
         f"{settings.ollama_host}/api/generate",
@@ -107,18 +108,16 @@ def summarize_document(document_text: str, department_name: str = "") -> dict:
     
     return data
 
-def clean_ocr_text(ocr_text: str) -> str:
-    """Clean OCR text using LLM for context-aware error correction."""
-    from app.llm.summary_prompts import OCR_CLEANING_PROMPT_TEMPLATE
-    
-    prompt = OCR_CLEANING_PROMPT_TEMPLATE.format(ocr_text=ocr_text)
+def correct_ocr_text(ocr_text: str) -> str:
+    """Correct OCR errors using LLM with domain-specific context."""
+    prompt = OCR_CORRECTION_PROMPT.format(ocr_text=ocr_text)
     
     resp = requests.post(
         f"{settings.ollama_host}/api/generate",
         json={
             "model": settings.llm_model,
             "prompt": prompt,
-            "temperature": settings.llm_temperature,
+            "temperature": 0.1,  # Lower temperature for correction tasks
             "top_k": settings.llm_top_k,
             "top_p": settings.llm_top_p,
             "stream": False,
@@ -127,7 +126,12 @@ def clean_ocr_text(ocr_text: str) -> str:
     )
     resp.raise_for_status()
     
-    return resp.json()["response"].strip()
+    corrected_text = resp.json()["response"]
+    return corrected_text.strip()
+
+def clean_ocr_text(ocr_text: str) -> str:
+    """Legacy function - now calls the updated OCR correction."""
+    return correct_ocr_text(ocr_text)
 
 def parse_multiline_response(response: str) -> dict:
     """Parse the expected multiline response format."""
