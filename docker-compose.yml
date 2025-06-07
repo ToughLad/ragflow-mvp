@@ -72,7 +72,7 @@ services:
       - ragflow-network
 
   ragflow:
-    image: infiniflow/ragflow:latest
+    image: infiniflow/ragflow:v0.15.0
     ports:
       - "3000:3000"
     environment:
